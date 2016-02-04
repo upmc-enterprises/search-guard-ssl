@@ -261,8 +261,10 @@ public class SearchGuardKeyStore {
         if (enforceHTTPClientAuth) {
             sslContextBuilder.trustManager(trustedHTTPCertificates);
         }
-
+        
+        
         final SSLEngine engine = sslContextBuilder.build().newEngine(PooledByteBufAllocator.DEFAULT);
+        engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols());
         // engine.setNeedClientAuth(enforceHTTPClientAuth);
         return engine;
 
@@ -280,7 +282,9 @@ public class SearchGuardKeyStore {
                 // https://github.com/netty/netty/issues/4722
                 .sessionCacheSize(0).sessionTimeout(0).sslProvider(this.sslTransportServerProvider)
                 .trustManager(trustedTransportCertificates);
+        
         final SSLEngine engine = sslContextBuilder.build().newEngine(PooledByteBufAllocator.DEFAULT);
+        engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols());
         // engine.setNeedClientAuth(true);
         return engine;
 
@@ -305,10 +309,12 @@ public class SearchGuardKeyStore {
             final SSLParameters sslParams = new SSLParameters();
             sslParams.setEndpointIdentificationAlgorithm("HTTPS");
             engine.setSSLParameters(sslParams);
-
+            engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols());
             return engine;
         } else {
-            return sslContext.newEngine(PooledByteBufAllocator.DEFAULT);
+            final SSLEngine engine = sslContext.newEngine(PooledByteBufAllocator.DEFAULT);
+            engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols());
+            return engine;
         }
 
     }
