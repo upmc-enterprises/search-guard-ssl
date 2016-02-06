@@ -178,9 +178,11 @@ public class SSLTest extends AbstractUnitTest {
 
         startES(settings);
 
-        final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("path.home", ".").put(settings).build();
+        final Settings tcSettings = Settings.builder().put("cluster.name", clustername)
+                .put("plugin.types", SearchGuardSSLPlugin.class)
+                .put("path.home", ".").put(settings).build();
 
-        try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+        try (TransportClient tc = TransportClient.builder().settings(tcSettings).build()) {
             tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
             Assert.assertEquals(3, tc.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
         }
@@ -230,9 +232,11 @@ public class SSLTest extends AbstractUnitTest {
                 .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
                 .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore_fail.jks"))
                 .put("searchguard.ssl.transport.enforce_hostname_verification", false)
-                .put("searchguard.ssl.transport.resolve_hostname", false).build();
+                .put("searchguard.ssl.transport.resolve_hostname", false)
+                .put("plugin.types", SearchGuardSSLPlugin.class)
+                .build();
 
-        try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+        try (TransportClient tc = TransportClient.builder().settings(tcSettings).build()) {
             tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
             Assert.assertEquals(3, tc.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
         }
