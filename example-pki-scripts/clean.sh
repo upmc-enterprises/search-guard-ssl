@@ -6,4 +6,5 @@ rm -f *.jks
 rm -f *.pem
 rm -f *.p12
 rm -f *.csr
+rm -f etc/gen-*
 
