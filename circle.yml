@@ -4,7 +4,8 @@ machine:
   environment:
     #https://github.com/floragunncom/search-guard-ssl/issues/15
     #SG_ALLOW_OPENSSL: false
-    MAVEN_OPTS: "-Xmx1024m -XX:-HeapDumpOnOutOfMemoryError -Xloggc:./gclog.log -Xcheck:jni -verbose:gc -verbose:jni -XX:-PrintCommandLineFlags -XX:-PrintGC -XX:-PrintGCDetails -XX:-PrintGCTimeStamps"
+    #MAVEN_OPTS: "-Xmx1024m -XX:-HeapDumpOnOutOfMemoryError -Xloggc:./gclog.log -Xcheck:jni -verbose:gc -verbose:jni -XX:-PrintCommandLineFlags -XX:-PrintGC -XX:-PrintGCDetails -XX:-PrintGCTimeStamps"
+    _JAVA_OPTIONS: "-Xms512m -Xmx1024m -XX:-HeapDumpOnOutOfMemoryError -Xloggc:./gclog.log -Xcheck:jni -verbose:gc -verbose:jni -XX:-PrintCommandLineFlags -XX:-PrintGC -XX:-PrintGCDetails -XX:-PrintGCTimeStamps"
     
 dependencies:
   pre:
