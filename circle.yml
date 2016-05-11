@@ -6,7 +6,6 @@ machine:
     #SG_ALLOW_OPENSSL: false
     MAVEN_OPTS: "-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_err.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclog.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
     _JAVA_OPTIONS: "-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_err.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclog.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
-    ARTI: "$CIRCLE_ARTIFACTS"
     
 dependencies:
   pre:
@@ -14,10 +13,7 @@ dependencies:
     
 test:
   override:
-    - echo $CIRCLE_ARTIFACTS
-    - echo $MAVEN_OPTS
-    - echo $ARTI
-    - mvn integration-test -Dsurefire.argLine="-XX:HeapDumpPath=$ARTI/ -XX:ErrorFile=$ARTI/hs_errsf.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$ARTI/gclogsf.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps" -DargLine="-XX:HeapDumpPath=$ARTI/ -XX:ErrorFile=$ARTI/hs_errsf.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$ARTI/gclogsf.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
+    - mvn integration-test -DargLine="$MAVEN_OPTS"
     - 'killall -9 java || echo "killed"'
     - 'ls -la'
     - 'cat *.log*'
