@@ -1,6 +1,9 @@
 machine:
   java:
     version: openjdk7
+  environment:
+    #https://github.com/floragunncom/search-guard-ssl/issues/15
+    SG_ALLOW_OPENSSL: false
     
 dependencies:
   pre:
