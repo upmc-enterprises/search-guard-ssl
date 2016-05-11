@@ -1,6 +1,10 @@
 machine:
   java:
-    version: oraclejdk8
+    version: openjdk7
+    
+dependencies:
+  pre:
+    - sudo apt-get update; sudo apt-get install openssl libapr1
 
 general:
   branches:
