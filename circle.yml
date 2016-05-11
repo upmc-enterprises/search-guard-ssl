@@ -9,6 +9,8 @@ machine:
     
 dependencies:
   pre:
+    - mkdir -p $CIRCLE_ARTIFACTS/dummy
+    - touch $CIRCLE_ARTIFACTS/dummy/hello.txt
     - sudo apt-get update; sudo apt-get install openssl libapr1
     
 test:
