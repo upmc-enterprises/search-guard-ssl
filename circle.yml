@@ -12,7 +12,7 @@ dependencies:
   pre:
     - sudo apt-get update; sudo apt-get install openssl libapr1
     
-test
+test:
   override:
     - mvn integration-test
     #- 'killall -9 java || echo "killed"'
