@@ -1,6 +1,12 @@
+sudo: required
+# OpenJDK 7 processes will encounter buffer overflows when the host name is too long.
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libapr1 openssl
+  - cat /etc/hosts
+  - sudo hostname "$(hostname | cut -c1-63)"
+  - sed -e "s/^\\(127\\.0\\.0\\.1.*\\)/\\1 $(hostname | cut -c1-63)/" /etc/hosts | sudo tee /etc/hosts
+  - cat /etc/hosts
 language: java
 jdk:
 - openjdk7 #https://github.com/travis-ci/travis-ci/issues/5227
