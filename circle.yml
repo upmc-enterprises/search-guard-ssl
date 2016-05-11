@@ -4,7 +4,7 @@ machine:
   environment:
     #https://github.com/floragunncom/search-guard-ssl/issues/15
     #SG_ALLOW_OPENSSL: false
-    #MAVEN_OPTS: "-Xmx1024m -XX:-HeapDumpOnOutOfMemoryError -Xloggc:./gclog.log -Xcheck:jni -verbose:gc -verbose:jni -XX:-PrintCommandLineFlags -XX:-PrintGC -XX:-PrintGCDetails -XX:-PrintGCTimeStamps" 
+    MAVEN_OPTS: "-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_err.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclog.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
     _JAVA_OPTIONS: "-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_err.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclog.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
     
 dependencies:
@@ -13,7 +13,7 @@ dependencies:
     
 test:
   override:
-    - 'mvn integration-test -Dsurefire.argLine="-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_errsf.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclogsf.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps" -DargLine="-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_errsf.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclogsf.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"'
+    - mvn integration-test -Dsurefire.argLine="-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_errsf.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclogsf.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps" -DargLine="-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_errsf.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclogsf.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
     - 'killall -9 java || echo "killed"'
     - 'ls -la'
     - 'cat *.log*'
