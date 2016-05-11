@@ -3,12 +3,19 @@ machine:
     version: openjdk7
   environment:
     #https://github.com/floragunncom/search-guard-ssl/issues/15
-    SG_ALLOW_OPENSSL: false
+    #SG_ALLOW_OPENSSL: false
+    MAVEN_OPTS: "-XX:-HeapDumpOnOutOfMemoryError -Xloggc:./gclog.log -Xcheck:jni -verbose:gc -verbose:jni -XX:-PrintCommandLineFlags -XX:-PrintGC -XX:-PrintGCDetails -XX:-PrintGCTimeStamps"
     
 dependencies:
   pre:
     - sudo apt-get update; sudo apt-get install openssl libapr1
-
+    
+test:
+  override:
+    - 'mvn integration-test'
+    - 'ls -la'
+    - 'cat *.log*'
+    
 general:
   branches:
     ignore:
