@@ -96,7 +96,7 @@
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-tcnative</artifactId>
-          <version>1.1.33.Fork11</version> <!-- 1.1.33.Fork14 and newer need netty >= 4.1.x -->
+          <version>1.1.33.Fork15</version> <!-- 1.1.33.Fork14 and newer need netty >= 4.1.x -->
           <classifier>${os.detected.classifier}</classifier>
           <scope>provided</scope>
         </dependency>
@@ -233,11 +233,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.17</version>
                 <configuration>
-<forkCount>0</forkCount>
                     <includes>
                         <include>**/*Test*.java</include>
                     </includes>
-                <argLine>-XX:HeapDumpPath=${env.CIRCLE_ARTIFACTS}/ -XX:ErrorFile=${env.CIRCLE_ARTIFACTS}/hs_err.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:${env.CIRCLE_ARTIFACTS}/gclog.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps</argLine>
                 </configuration>
             </plugin>
             <plugin>
