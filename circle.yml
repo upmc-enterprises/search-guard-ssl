@@ -4,17 +4,15 @@ machine:
   environment:
     #https://github.com/floragunncom/search-guard-ssl/issues/15
     #SG_ALLOW_OPENSSL: false
-    #MAVEN_OPTS: "-Xmx1024m -XX:-HeapDumpOnOutOfMemoryError -Xloggc:./gclog.log -Xcheck:jni -verbose:gc -verbose:jni -XX:-PrintCommandLineFlags -XX:-PrintGC -XX:-PrintGCDetails -XX:-PrintGCTimeStamps"
-    _JAVA_OPTIONS: "-Xmx512m -XX:-HeapDumpOnOutOfMemoryError -Xloggc:./gclog.log -Xcheck:jni -verbose:gc -verbose:jni -XX:-PrintCommandLineFlags -XX:-PrintGC -XX:-PrintGCDetails -XX:-PrintGCTimeStamps"
+    #MAVEN_OPTS: "-Xmx1024m -XX:-HeapDumpOnOutOfMemoryError -Xloggc:./gclog.log -Xcheck:jni -verbose:gc -verbose:jni -XX:-PrintCommandLineFlags -XX:-PrintGC -XX:-PrintGCDetails -XX:-PrintGCTimeStamps" 
+    _JAVA_OPTIONS: "-XX:HeapDumpPath=$CIRCLE_ARTIFACTS -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_err.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclog.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
     
 dependencies:
   pre:
-    - 'pwd'
     - sudo apt-get update; sudo apt-get install openssl libapr1
     
 test:
   override:
-    - 'pwd'
     - 'mvn integration-test'
     - 'killall -9 java || echo "killed"'
     - 'ls -la'
