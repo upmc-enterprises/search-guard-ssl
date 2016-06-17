@@ -21,12 +21,14 @@ import java.net.InetSocketAddress;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
@@ -36,13 +38,41 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.handler.ssl.NotSslRecordException;
 import org.jboss.netty.handler.ssl.SslHandler;
 
 import com.floragunn.searchguard.ssl.SearchGuardKeyStore;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 
 public class SearchGuardSSLNettyTransport extends NettyTransport {
+
+    @Override
+    protected void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
+        if(this.lifecycle.started()) {
+            
+            final Throwable cause = e.getCause();
+            if(cause instanceof NotSslRecordException) {
+                logger.warn("Someone speaks plaintext instead of ssl, will close the channel");
+                ctx.getChannel().close();
+                disconnectFromNodeChannel(ctx.getChannel(), e.getCause());
+                return;
+            } else if (cause instanceof SSLException) {
+                logger.error("SSL Problem "+cause.getMessage(),cause);
+                ctx.getChannel().close();
+                disconnectFromNodeChannel(ctx.getChannel(), e.getCause());
+                return;
+            } else if (cause instanceof SSLHandshakeException) {
+                logger.error("Problem during handshake "+cause.getMessage());
+                ctx.getChannel().close();
+                disconnectFromNodeChannel(ctx.getChannel(), e.getCause());
+                return;
+            }
+        }
+        
+        super.exceptionCaught(ctx, e);
+    }
 
     private final SearchGuardKeyStore sgks;
 
@@ -93,6 +123,7 @@ public class SearchGuardSSLNettyTransport extends NettyTransport {
     }
 
     protected static class ClientSSLHandler extends SimpleChannelHandler {
+        private final ESLogger log = Loggers.getLogger(this.getClass());
         private final boolean hostnameVerificationEnabled;
         private final boolean hostnameVerificationResovleHostName;
         private final SearchGuardKeyStore sgks;
@@ -102,6 +133,12 @@ public class SearchGuardSSLNettyTransport extends NettyTransport {
             this.sgks = sgks;
             this.hostnameVerificationEnabled = hostnameVerificationEnabled;
             this.hostnameVerificationResovleHostName = hostnameVerificationResovleHostName;
+        }
+
+        //TODO check if we need to implement these:
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {            
+            super.exceptionCaught(ctx, e);
         }
 
         @Override
@@ -117,6 +154,10 @@ public class SearchGuardSSLNettyTransport extends NettyTransport {
                         hostname = inetSocketAddress.getHostString();
                     }
 
+                    if(log.isDebugEnabled()) {
+                        log.debug("Hostname of peer is {} with hostnameVerificationResovleHostName: {}", hostname, hostnameVerificationResovleHostName);
+                    }
+                    
                     engine = sgks.createClientTransportSSLEngine(hostname, inetSocketAddress.getPort());
                 } else {
                     engine = sgks.createClientTransportSSLEngine(null, -1);

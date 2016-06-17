@@ -42,10 +42,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 
 import javax.crypto.Cipher;
 import javax.net.ssl.SSLContext;
@@ -54,7 +52,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -64,7 +62,6 @@ import org.elasticsearch.env.Environment;
 
 import com.floragunn.searchguard.ssl.util.SSLCertificateHelper;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
-import com.google.common.base.Strings;
 
 public class SearchGuardKeyStore {
 
@@ -98,8 +95,13 @@ public class SearchGuardKeyStore {
     private X509Certificate[] transportKeystoreCert;
     private PrivateKey transportKeystoreKey;
     private ClientAuth httpClientAuthMode;
-    private List<String> enabledCiphersJDKProvider;
-    private List<String> enabledCiphersOpenSSLProvider;
+    private List<String> enabledHttpCiphersJDKProvider;
+    private List<String> enabledHttpCiphersOpenSSLProvider;
+    private List<String> enabledTransportCiphersJDKProvider;
+    private List<String> enabledTransportCiphersOpenSSLProvider;
+    private SslContext httpSslContext;
+    private SslContext transportServerSslContext;
+    private SslContext transportClientSslContext;
 
     @Inject
     public SearchGuardKeyStore(final Settings settings) {
@@ -133,29 +135,42 @@ public class SearchGuardKeyStore {
             sslTransportClientProvider = sslTransportServerProvider = null;
         }
 
-        initSSLConfig();
         initEnabledSSLCiphers();
+        initSSLConfig();
         printJCEWarnings();
 
         log.info("sslTransportClientProvider:{} with ciphers {}", sslTransportClientProvider,
-                getEnabledSSLCiphers(sslTransportClientProvider));
+                getEnabledSSLCiphers(sslTransportClientProvider, false));
         log.info("sslTransportServerProvider:{} with ciphers {}", sslTransportServerProvider,
-                getEnabledSSLCiphers(sslTransportServerProvider));
-        log.info("sslHTTPProvider:{} with ciphers {}", sslHTTPProvider, getEnabledSSLCiphers(sslHTTPProvider));
+                getEnabledSSLCiphers(sslTransportServerProvider, false));
+        log.info("sslHTTPProvider:{} with ciphers {}", sslHTTPProvider, getEnabledSSLCiphers(sslHTTPProvider, true));
+        
+        log.info("sslTransport protocols {}", Arrays.asList(SSLConfigConstants.getSecureSSLProtocols(settings, false)));
+        log.info("sslHTTP protocols {}", Arrays.asList(SSLConfigConstants.getSecureSSLProtocols(settings, true)));
+        
+        
+        if(transportSSLEnabled && (getEnabledSSLCiphers(sslTransportClientProvider, false).isEmpty()
+                || getEnabledSSLCiphers(sslTransportServerProvider, false).isEmpty())) {
+            throw new ElasticsearchSecurityException("no valid cipher suites for transport protocol");
+        }
 
+        if(httpSSLEnabled && getEnabledSSLCiphers(sslHTTPProvider, true).isEmpty()) {
+            throw new ElasticsearchSecurityException("no valid cipher suites for http");
+        }
+        
+        if(transportSSLEnabled && SSLConfigConstants.getSecureSSLProtocols(settings, false).length == 0) {
+            throw new ElasticsearchSecurityException("no ssl protocols for transport protocol");
+        }
+        
+        if(httpSSLEnabled && SSLConfigConstants.getSecureSSLProtocols(settings, true).length == 0) {
+            throw new ElasticsearchSecurityException("no ssl protocols for http");
+        }
     }
 
     private void initSSLConfig() {
         
         final Environment env = new Environment(settings);
         log.info("Config directory is {}/, from there the key- and truststore files are resolved relatively", env.configFile().toAbsolutePath());
-
-        StringBuilder sb = new StringBuilder();
-        Map<String, String> settingsAsMap = settings.getAsMap();
-        for(String key: new TreeSet<String>(settingsAsMap.keySet())) {
-            sb.append(key+"="+settingsAsMap.get(key)+System.lineSeparator());
-        }
-        log.info("Effective settings:{}{}",System.lineSeparator(), sb);
         
         if (transportSSLEnabled) {
             
@@ -190,11 +205,15 @@ public class SearchGuardKeyStore {
             try {
 
                 final KeyStore ks = KeyStore.getInstance(keystoreType);
-                ks.load(new FileInputStream(new File(keystoreFilePath)), keystorePassword == null? null:keystorePassword.toCharArray());
+                ks.load(new FileInputStream(new File(keystoreFilePath)), (keystorePassword == null || keystorePassword.length() == 0) ? null:keystorePassword.toCharArray());
 
                 transportKeystoreCert = SSLCertificateHelper.exportCertificateChain(ks, keystoreAlias);
-                transportKeystoreKey = SSLCertificateHelper.exportDecryptedKey(ks, keystoreAlias, keystorePassword==null?null:keystorePassword.toCharArray());
+                transportKeystoreKey = SSLCertificateHelper.exportDecryptedKey(ks, keystoreAlias, (keystorePassword==null || keystorePassword.length() == 0) ? null:keystorePassword.toCharArray());
 
+                if(transportKeystoreKey == null) {
+                    throw new ElasticsearchException("No key found in "+keystoreFilePath+" with alias "+keystoreAlias);
+                }
+                
                 if(transportKeystoreCert != null && transportKeystoreCert.length > 0) {
                     
                     for (int i = 0; i < transportKeystoreCert.length; i++) {
@@ -204,16 +223,42 @@ public class SearchGuardKeyStore {
                             log.info("Transport keystore subject DN no. {} {}",i,x509Certificate.getSubjectX500Principal());
                         }
                     }
+                } else {
+                    throw new ElasticsearchException("No certificates found in "+keystoreFilePath+" with alias "+keystoreAlias);
                 }
                 
                 
                 final KeyStore ts = KeyStore.getInstance(truststoreType);
-                ts.load(new FileInputStream(new File(truststoreFilePath)), truststorePassword==null?null:truststorePassword.toCharArray());
+                ts.load(new FileInputStream(new File(truststoreFilePath)), (truststorePassword==null || truststorePassword.length() == 0) ? null:truststorePassword.toCharArray());
 
                 trustedTransportCertificates = SSLCertificateHelper.exportCertificateChain(ts, truststoreAlias);
 
+                if (trustedTransportCertificates == null) {
+                    throw new ElasticsearchException("No truststore configured for server");
+                }
+
+                final SslContextBuilder sslServerContextBuilder = SslContextBuilder.forServer(transportKeystoreKey, transportKeystoreCert)
+                        .ciphers(getEnabledSSLCiphers(this.sslTransportServerProvider, false))
+                        .applicationProtocolConfig(ApplicationProtocolConfig.DISABLED).clientAuth(ClientAuth.REQUIRE)
+                        // https://github.com/netty/netty/issues/4722
+                        .sessionCacheSize(0).sessionTimeout(0).sslProvider(this.sslTransportServerProvider)
+                        .trustManager(trustedTransportCertificates);
+
+                transportServerSslContext = buildSSLContext(sslServerContextBuilder);
+                
+                if (trustedTransportCertificates == null) {
+                    throw new ElasticsearchException("No truststore configured for client");
+                }
+
+                final SslContextBuilder sslClientContextBuilder = SslContextBuilder.forClient().ciphers(getEnabledSSLCiphers(sslTransportClientProvider, false))
+                        .applicationProtocolConfig(ApplicationProtocolConfig.DISABLED).sessionCacheSize(0).sessionTimeout(0)
+                        .sslProvider(sslTransportClientProvider).trustManager(trustedTransportCertificates)
+                        .keyManager(transportKeystoreKey, transportKeystoreCert);
+
+                transportClientSslContext = buildSSLContext(sslClientContextBuilder);
+                
             } catch (final Exception e) {
-                throw ExceptionsHelper.convertToElastic(e);
+                throw new ElasticsearchSecurityException(e.toString(), e);
             }
 
         }
@@ -229,13 +274,11 @@ public class SearchGuardKeyStore {
             httpClientAuthMode = ClientAuth.valueOf(settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_CLIENTAUTH_MODE, ClientAuth.OPTIONAL.toString()));
             
             //TODO remove with next version
-            String _enforceHTTPClientAuth = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENFORCE_CLIENTAUTH);
+            String _enforceHTTPClientAuth = settings.get("searchguard.ssl.http.enforce_clientauth");
 
-            if(!Strings.isNullOrEmpty(_enforceHTTPClientAuth)) {
-                log.warn("{} is deprecated and replaced by {}", SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENFORCE_CLIENTAUTH, SSLConfigConstants.SEARCHGUARD_SSL_HTTP_CLIENTAUTH_MODE);
-                if(Boolean.parseBoolean(_enforceHTTPClientAuth)) {
-                    httpClientAuthMode = ClientAuth.REQUIRE;
-                }
+            if(_enforceHTTPClientAuth != null) {
+                log.error("{} is deprecated and replaced by {}", "searchguard.ssl.http.enforce_clientauth", SSLConfigConstants.SEARCHGUARD_SSL_HTTP_CLIENTAUTH_MODE);
+                throw new RuntimeException("searchguard.ssl.http.enforce_clientauth is deprecated");
             }
 
             log.info("HTTPS client auth mode {}", httpClientAuthMode);
@@ -262,11 +305,16 @@ public class SearchGuardKeyStore {
             try {
 
                 final KeyStore ks = KeyStore.getInstance(keystoreType);
-                ks.load(new FileInputStream(new File(keystoreFilePath)), keystorePassword == null? null:keystorePassword.toCharArray());
+                ks.load(new FileInputStream(new File(keystoreFilePath)), (keystorePassword == null || keystorePassword.length() == 0) ? null:keystorePassword.toCharArray());
 
                 httpKeystoreCert = SSLCertificateHelper.exportCertificateChain(ks, keystoreAlias);
-                httpKeystoreKey = SSLCertificateHelper.exportDecryptedKey(ks, keystoreAlias, keystorePassword==null?null:keystorePassword.toCharArray());
+                httpKeystoreKey = SSLCertificateHelper.exportDecryptedKey(ks, keystoreAlias, (keystorePassword==null || keystorePassword.length() == 0) ? null:keystorePassword.toCharArray());
 
+                if(httpKeystoreKey == null) {
+                    throw new ElasticsearchException("No key found in "+keystoreFilePath+" with alias "+keystoreAlias);
+                }
+                
+                
                 if(httpKeystoreCert != null && httpKeystoreCert.length > 0) {
                     
                     for (int i = 0; i < httpKeystoreCert.length; i++) {
@@ -276,6 +324,8 @@ public class SearchGuardKeyStore {
                             log.info("HTTP keystore subject DN no. {} {}",i,x509Certificate.getSubjectX500Principal());
                         }
                     }
+                } else {
+                    throw new ElasticsearchException("No certificates found in "+keystoreFilePath+" with alias "+keystoreAlias);
                 }
                 
                 
@@ -288,53 +338,40 @@ public class SearchGuardKeyStore {
                     final String truststoreAlias = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_TRUSTSTORE_ALIAS, null);
 
                     final KeyStore ts = KeyStore.getInstance(truststoreType);
-                    ts.load(new FileInputStream(new File(truststoreFilePath)), truststorePassword == null?null:truststorePassword.toCharArray());
+                    ts.load(new FileInputStream(new File(truststoreFilePath)), (truststorePassword == null || truststorePassword.length() == 0) ?null:truststorePassword.toCharArray());
 
                     trustedHTTPCertificates = SSLCertificateHelper.exportCertificateChain(ts, truststoreAlias);
                 }
+                
+                final SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(httpKeystoreKey, httpKeystoreCert)
+                        .ciphers(getEnabledSSLCiphers(this.sslHTTPProvider, true)).applicationProtocolConfig(ApplicationProtocolConfig.DISABLED)
+                        .clientAuth(Objects.requireNonNull(httpClientAuthMode)) // https://github.com/netty/netty/issues/4722
+                        .sessionCacheSize(0).sessionTimeout(0).sslProvider(this.sslHTTPProvider);
+
+                if (trustedHTTPCertificates != null && trustedHTTPCertificates.length > 0) {
+                    sslContextBuilder.trustManager(trustedHTTPCertificates);
+                }
+                
+                httpSslContext = buildSSLContext(sslContextBuilder);        
+                
             } catch (final Exception e) {
-                throw ExceptionsHelper.convertToElastic(e);
+                throw new ElasticsearchSecurityException(e.toString(), e);
             }
         }
     }
 
     public SSLEngine createHTTPSSLEngine() throws SSLException {
-
-        final SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(httpKeystoreKey, httpKeystoreCert)
-                .ciphers(getEnabledSSLCiphers(this.sslHTTPProvider)).applicationProtocolConfig(ApplicationProtocolConfig.DISABLED)
-                .clientAuth(Objects.requireNonNull(httpClientAuthMode)) // https://github.com/netty/netty/issues/4722
-                .sessionCacheSize(0).sessionTimeout(0).sslProvider(this.sslHTTPProvider);
-
-        if (trustedHTTPCertificates != null && trustedHTTPCertificates.length > 0) {
-            sslContextBuilder.trustManager(trustedHTTPCertificates);
-        }
-        
-        final SslContext sslContext = buildSSLContext(sslContextBuilder);
-
-        final SSLEngine engine = sslContext.newEngine(PooledByteBufAllocator.DEFAULT);
-        engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols());
+        final SSLEngine engine = httpSslContext.newEngine(PooledByteBufAllocator.DEFAULT);
+        engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols(settings, true));
         // engine.setNeedClientAuth(enforceHTTPClientAuth);
         return engine;
 
     }
 
     public SSLEngine createServerTransportSSLEngine() throws SSLException {
-
-        if (trustedTransportCertificates == null) {
-            throw new ElasticsearchException("No truststore configured for server");
-        }
-
-        final SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(transportKeystoreKey, transportKeystoreCert)
-                .ciphers(getEnabledSSLCiphers(this.sslTransportServerProvider))
-                .applicationProtocolConfig(ApplicationProtocolConfig.DISABLED).clientAuth(ClientAuth.REQUIRE)
-                // https://github.com/netty/netty/issues/4722
-                .sessionCacheSize(0).sessionTimeout(0).sslProvider(this.sslTransportServerProvider)
-                .trustManager(trustedTransportCertificates);
-
-        final SslContext sslContext = buildSSLContext(sslContextBuilder);
-
-        final SSLEngine engine = sslContext.newEngine(PooledByteBufAllocator.DEFAULT);
-        engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols());
+        
+        final SSLEngine engine = transportServerSslContext.newEngine(PooledByteBufAllocator.DEFAULT);
+        engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols(settings, false));
         // engine.setNeedClientAuth(true);
         return engine;
 
@@ -342,28 +379,17 @@ public class SearchGuardKeyStore {
 
     public SSLEngine createClientTransportSSLEngine(final String peerHost, final int peerPort) throws SSLException {
 
-        if (trustedTransportCertificates == null) {
-            throw new ElasticsearchException("No truststore configured for client");
-        }
-
-        final SslContextBuilder sslContextBuilder = SslContextBuilder.forClient().ciphers(getEnabledSSLCiphers(sslTransportClientProvider))
-                .applicationProtocolConfig(ApplicationProtocolConfig.DISABLED).sessionCacheSize(0).sessionTimeout(0)
-                .sslProvider(sslTransportClientProvider).trustManager(trustedTransportCertificates)
-                .keyManager(transportKeystoreKey, transportKeystoreCert);
-
-        final SslContext sslContext = buildSSLContext(sslContextBuilder);
-
         if (peerHost != null) {
-            final SSLEngine engine = sslContext.newEngine(PooledByteBufAllocator.DEFAULT, peerHost, peerPort);
+            final SSLEngine engine = transportClientSslContext.newEngine(PooledByteBufAllocator.DEFAULT, peerHost, peerPort);
 
             final SSLParameters sslParams = new SSLParameters();
             sslParams.setEndpointIdentificationAlgorithm("HTTPS");
             engine.setSSLParameters(sslParams);
-            engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols());
+            engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols(settings, false));
             return engine;
         } else {
-            final SSLEngine engine = sslContext.newEngine(PooledByteBufAllocator.DEFAULT);
-            engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols());
+            final SSLEngine engine = transportClientSslContext.newEngine(PooledByteBufAllocator.DEFAULT);
+            engine.setEnabledProtocols(SSLConfigConstants.getSecureSSLProtocols(settings, false));
             return engine;
         }
 
@@ -378,40 +404,98 @@ public class SearchGuardKeyStore {
         }
     }
 
-    private List<String> getEnabledSSLCiphers(final SslProvider provider) {
+    private List<String> getEnabledSSLCiphers(final SslProvider provider, boolean http) {
         if (provider == null) {
             return Collections.emptyList();
         }
 
-        return provider == SslProvider.JDK ? enabledCiphersJDKProvider : enabledCiphersOpenSSLProvider;
+        if(http) {
+            return provider == SslProvider.JDK ? enabledHttpCiphersJDKProvider : enabledHttpCiphersOpenSSLProvider;
+        } else {
+            return provider == SslProvider.JDK ? enabledTransportCiphersJDKProvider : enabledTransportCiphersOpenSSLProvider;
+        }
+        
     }
 
     private void initEnabledSSLCiphers() {
+        
+        List<String> secureSSLCiphers = SSLConfigConstants.getSecureSSLCiphers(settings, true);
 
         if (OpenSsl.isAvailable()) {
             final Set<String> openSSLSecureCiphers = new HashSet<>();
-            for (final String secure : SSLConfigConstants.SECURE_SSL_CIPHERS) {
+            for (final String secure : secureSSLCiphers) {
                 if (OpenSsl.isCipherSuiteAvailable(secure)) {
                     openSSLSecureCiphers.add(secure);
                 }
             }
 
-            enabledCiphersOpenSSLProvider = Collections.unmodifiableList(new ArrayList<String>(openSSLSecureCiphers));
+            enabledHttpCiphersOpenSSLProvider = Collections.unmodifiableList(new ArrayList<String>(openSSLSecureCiphers));
         } else {
-            enabledCiphersOpenSSLProvider = Collections.emptyList();
+            enabledHttpCiphersOpenSSLProvider = Collections.emptyList();
+        }
+
+        SSLEngine engine = null;
+        try {
+            final SSLContext serverContext = SSLContext.getInstance("TLS");
+            serverContext.init(null, null, null);
+            engine = serverContext.createSSLEngine();
+            final List<String> jdkSupportedCiphers = new ArrayList<>(Arrays.asList(engine.getSupportedCipherSuites()));
+            jdkSupportedCiphers.retainAll(secureSSLCiphers);
+            engine.setEnabledCipherSuites(jdkSupportedCiphers.toArray(new String[0]));
+
+            enabledHttpCiphersJDKProvider = Collections.unmodifiableList(Arrays.asList(engine.getEnabledCipherSuites()));
+        } catch (final Exception e) {
+            enabledHttpCiphersJDKProvider = Collections.emptyList();
+        } finally {
+            if(engine != null) {
+                try {
+                    engine.closeInbound();
+                } catch (SSLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                engine.closeOutbound();
+            }
+        }
+        
+        
+        
+        secureSSLCiphers = SSLConfigConstants.getSecureSSLCiphers(settings, false);
+
+        if (OpenSsl.isAvailable()) {
+            final Set<String> openSSLSecureCiphers = new HashSet<>();
+            for (final String secure : secureSSLCiphers) {
+                if (OpenSsl.isCipherSuiteAvailable(secure)) {
+                    openSSLSecureCiphers.add(secure);
+                }
+            }
+
+            enabledTransportCiphersOpenSSLProvider = Collections.unmodifiableList(new ArrayList<String>(openSSLSecureCiphers));
+        } else {
+            enabledTransportCiphersOpenSSLProvider = Collections.emptyList();
         }
 
         try {
             final SSLContext serverContext = SSLContext.getInstance("TLS");
             serverContext.init(null, null, null);
-            final SSLEngine engine = serverContext.createSSLEngine();
+            engine = serverContext.createSSLEngine();
             final List<String> jdkSupportedCiphers = new ArrayList<>(Arrays.asList(engine.getSupportedCipherSuites()));
-            jdkSupportedCiphers.retainAll(SSLConfigConstants.SECURE_SSL_CIPHERS);
+            jdkSupportedCiphers.retainAll(secureSSLCiphers);
             engine.setEnabledCipherSuites(jdkSupportedCiphers.toArray(new String[0]));
 
-            enabledCiphersJDKProvider = Collections.unmodifiableList(Arrays.asList(engine.getEnabledCipherSuites()));
+            enabledTransportCiphersJDKProvider = Collections.unmodifiableList(Arrays.asList(engine.getEnabledCipherSuites()));
         } catch (final Exception e) {
-            enabledCiphersJDKProvider = Collections.emptyList();
+            enabledTransportCiphersJDKProvider = Collections.emptyList();
+        } finally {
+            if(engine != null) {
+                try {
+                    engine.closeInbound();
+                } catch (SSLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                engine.closeOutbound();
+            }
         }
     }
 
