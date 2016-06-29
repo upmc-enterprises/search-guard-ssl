@@ -1,3 +1,8 @@
+general:
+  branches:
+    only:
+      - master
+      
 machine:
   java:
     version: openjdk8
@@ -6,7 +11,8 @@ dependencies:
   pre:
     - sudo apt-get update; sudo apt-get install openssl libapr1
 
-general:
-  branches:
-    ignore:
-      - gh-pages
+deployment:
+  deploysnap:
+    branch: master
+    commands:
+      - mvn deploy -DskipTests -s settings.xml
