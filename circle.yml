@@ -1,12 +1,17 @@
+general:
+  branches:
+    only:
+      - master
+      
 machine:
   java:
     version: openjdk7
-  environment:
+  #environment:
     #https://github.com/floragunncom/search-guard-ssl/issues/15
     #SG_ALLOW_OPENSSL: false
     #MAVEN_OPTS: "-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_err.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclog.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
     #_JAVA_OPTIONS: "-XX:HeapDumpPath=$CIRCLE_ARTIFACTS/ -XX:ErrorFile=$CIRCLE_ARTIFACTS/hs_err.log -XX:+HeapDumpOnOutOfMemoryError -Xloggc:$CIRCLE_ARTIFACTS/gclog.log -Xcheck:jni -XX:+PrintCommandLineFlags -XX:+PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
-    _JAVA_OPTIONS: "-Xmx1024m"
+    #_JAVA_OPTIONS: "-Xmx1024m"
     
 dependencies:
   pre:
@@ -15,11 +20,3 @@ dependencies:
 test:
   override:
     - mvn integration-test
-    #- 'killall -9 java || echo "killed"'
-    #- 'ls -la'
-    #- 'cat *.log*'
-    
-general:
-  branches:
-    ignore:
-      - gh-pages
