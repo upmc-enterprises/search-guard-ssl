@@ -16,7 +16,7 @@
 
     <groupId>com.floragunn</groupId>
     <artifactId>search-guard-ssl</artifactId>
-    <version>2.3.3.14-SNAPSHOT</version>
+    <version>2.3.4.14-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Search Guard SSL</name>
@@ -44,9 +44,9 @@
     </licenses>
 
     <properties>
-        <elasticsearch.version>2.3.3</elasticsearch.version>
-        <netty.version>4.0.37.Final</netty.version>
-        <netty-native.version>1.1.33.Fork18</netty-native.version>
+        <elasticsearch.version>2.3.4</elasticsearch.version>
+        <netty.version>4.0.39.Final</netty.version>
+        <netty-native.version>1.1.33.Fork19</netty-native.version>
         <dependency.locations.enabled>false</dependency.locations.enabled>
     </properties>
 
@@ -93,16 +93,7 @@
           <version>${netty.version}</version>
           <scope>compile</scope>
         </dependency>
-
-        <!-- Optional, for native Open SSL support -->
-        <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-tcnative</artifactId>
-          <version>${netty-native.version}</version>
-          <classifier>${os.detected.classifier}</classifier>
-          <scope>provided</scope>
-        </dependency>
-
+       
         <!-- Only test scoped dependencies hereafter -->
 
         <dependency>
@@ -122,7 +113,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.12</version>
             <scope>test</scope>
         </dependency>
         
@@ -233,11 +224,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.17</version>
+                <version>2.19.1</version>
                 <configuration>
                     <includes>
                         <include>**/*Test*.java</include>
                     </includes>
+                    <forkCount>0</forkCount>
+                    <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
             <plugin>
@@ -454,5 +447,40 @@
                 </plugins>
             </build>
         </profile>
-    </profiles>
+        <profile>
+          <id>mac-openssl</id>
+          <activation>
+            <os>
+              <family>mac</family>
+            </os>
+          </activation>
+          <dependencies>
+            <!-- Optional, for native Open SSL support -->
+            <dependency>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-tcnative</artifactId>
+              <version>${netty-native.version}</version>
+              <classifier>${os.detected.classifier}</classifier>
+              <scope>provided</scope>
+            </dependency>
+          </dependencies>
+        </profile>
+        <profile>
+          <id>linux-openssl</id>
+          <activation>
+            <os>
+              <name>Linux</name>
+            </os>
+          </activation>
+          <dependencies>
+            <dependency>
+              <groupId>com.floragunn</groupId>
+              <artifactId>netty-tcnative-openssl-static-sg</artifactId>
+              <version>1.1.33.Fork19</version>
+              <classifier>${os.detected.classifier}</classifier>
+              <scope>provided</scope>
+            </dependency>
+          </dependencies>
+        </profile>
+    </profiles>         
 </project>
