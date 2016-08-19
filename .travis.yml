@@ -4,9 +4,9 @@ before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libapr1 openssl
   - cat /etc/hosts
-  #- sudo hostname "$(hostname | cut -c1-63)"
+  - sudo hostname "localhosthn"
   #- sed -e "s/^\\(127\\.0\\.0\\.1.*\\)/\\1 $(hostname | cut -c1-63)/" /etc/hosts | sudo tee /etc/hosts
-  - echo "127.0.0.1 localhost" | sudo tee /etc/hosts
+  - echo "127.0.0.1 localhost localhosthn" | sudo tee /etc/hosts
   - echo "127.0.1.1 ip4-loopback" | sudo tee -a /etc/hosts
   - cat /etc/hosts
 language: java
