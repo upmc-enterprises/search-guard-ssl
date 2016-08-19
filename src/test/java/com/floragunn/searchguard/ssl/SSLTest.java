@@ -33,12 +33,16 @@ import org.apache.lucene.util.Constants;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.node.hotthreads.NodesHotThreadsRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.action.admin.cluster.node.stats.NodesStatsRequest;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequest;
+import org.elasticsearch.action.admin.cluster.tasks.PendingClusterTasksRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
@@ -364,7 +368,7 @@ public class SSLTest extends AbstractUnitTest {
     }
 
     // transport
-    @Test
+    @Test(timeout=50000)
     public void testTransportClientSSL() throws Exception {
 
         final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
@@ -402,13 +406,57 @@ public class SSLTest extends AbstractUnitTest {
 
             log.debug("ClusterHealth done");
             
-            //Assert.assertEquals(3, tc.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
+            Assert.assertEquals(3, tc.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
             
-            //log.debug("NodesInfoRequest asserted");
+            log.debug("NodesInfoRequest asserted");
             
         }
     }
 
+    @Test(timeout=50000)
+    public void testTransportClientNodesInfo() throws Exception {
+
+        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
+                .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
+                .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
+                .put("searchguard.ssl.transport.enforce_hostname_verification", false)
+                .put("searchguard.ssl.transport.resolve_hostname", false).build();
+
+        startES(settings);
+        
+        log.debug("Elasticsearch started");
+
+        final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("path.home", ".").put(settings).build();
+
+        try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+            
+            log.debug("TransportClient built, connect now to {}:{}", nodeHost, nodePort);
+            
+            tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
+            
+            log.debug("TransportClient connected");
+            Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
+            Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+            log.debug("ClusterHealth done");            
+            Assert.assertEquals(3, tc.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);            
+            log.debug("NodesInfoRequest asserted");
+            Assert.assertEquals(3, tc.admin().cluster().nodesHotThreads(new NodesHotThreadsRequest()).actionGet().getNodes().length);            
+            log.debug("NodesHotThreadsRequest asserted");
+            Assert.assertEquals(3, tc.admin().cluster().nodesStats(new NodesStatsRequest()).actionGet().getNodes().length);            
+            log.debug("NodesStatsRequest asserted");
+            Assert.assertNotNull(tc.admin().cluster().clusterStats(new ClusterStatsRequest()).actionGet());            
+            log.debug("ClusterStatsRequest asserted");
+            Assert.assertNotNull(tc.admin().cluster().pendingClusterTasks(new PendingClusterTasksRequest()).actionGet());  
+            log.debug("PendingClusterTasksRequest asserted");
+            Assert.assertNotNull(tc.admin().cluster().state(new ClusterStateRequest()).actionGet().getState());   
+            log.debug("ClusterStateRequest asserted");
+        }
+    }
+    
+    
     @Test
     public void testNodeClientSSL() throws Exception {
 
