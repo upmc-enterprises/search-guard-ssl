@@ -295,6 +295,7 @@ public class JvmInfo implements Streamable, ToXContent {
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         System.out.println("--------------------------------------------------------- ::start tox");
+        new Exception().printStackTrace();
 
         builder.startObject(Fields.JVM);
         builder.field(Fields.PID, pid);
@@ -352,6 +353,8 @@ public class JvmInfo implements Streamable, ToXContent {
     }
 
     public static JvmInfo readJvmInfo(StreamInput in) throws IOException {
+        System.out.println("--------------------------"+in.getClass()+"--------------------------- ::start read");
+        new Exception().printStackTrace();
         JvmInfo jvmInfo = new JvmInfo();
         jvmInfo.readFrom(in);
         return jvmInfo;
@@ -360,6 +363,7 @@ public class JvmInfo implements Streamable, ToXContent {
     @Override
     public void readFrom(StreamInput in) throws IOException {
         System.out.println("--------------------------"+in.getClass()+"--------------------------- ::start read");
+        new Exception().printStackTrace();
         pid = in.readLong();
         version = in.readString();
         vmName = in.readString();
@@ -377,8 +381,14 @@ public class JvmInfo implements Streamable, ToXContent {
         for (int i = 0; i < size; i++) {
             systemProperties.put(in.readString(), in.readString());
         }
+        
+        System.out.println("--------------------- r::1");
+        
         mem = new Mem();
         mem.readFrom(in);
+        
+        System.out.println("--------------------- r::2");
+        
         gcCollectors = in.readStringArray();
         memoryPools = in.readStringArray();
         if (in.getVersion().onOrAfter(Version.V_2_2_0)) {
@@ -393,6 +403,7 @@ public class JvmInfo implements Streamable, ToXContent {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         System.out.println("-----------------------------"+out.getClass()+"---------------------------- ::start write");
+        new Exception().printStackTrace();
         out.writeLong(pid);
         out.writeString(version);
         out.writeString(vmName);
