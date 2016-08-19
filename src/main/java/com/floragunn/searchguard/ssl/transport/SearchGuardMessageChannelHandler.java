@@ -63,7 +63,7 @@ public class SearchGuardMessageChannelHandler extends MessageChannelHandler {
         return action;
     }
 
-    @Override
+   /* @Override
     public void channelConnected(final ChannelHandlerContext ctx, final ChannelStateEvent e) {
         // prevent javax.net.ssl.SSLException: Received close_notify during
         // handshake
@@ -85,7 +85,7 @@ public class SearchGuardMessageChannelHandler extends MessageChannelHandler {
                 ctx.sendUpstream(e);
             }
         });
-    }
+    }*/
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {    
