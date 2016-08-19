@@ -19,6 +19,7 @@ package com.floragunn.searchguard.ssl;
 
 import io.netty.handler.ssl.OpenSsl;
 
+import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
@@ -32,8 +33,16 @@ import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequest;
 import org.elasticsearch.action.admin.cluster.tasks.PendingClusterTasksRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.InputStreamStreamInput;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.monitor.jvm.JvmInfo;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -454,5 +463,35 @@ public class OpenSSLTest extends SSLTest {
                 log.debug("ClusterStateRequest asserted");
             }
         }
-    
+ 
+        
+        
+        @Test(timeout=50000)
+        public void testjvminfo() throws Exception {
+            JvmInfo.jvmInfo().getBootClassPath();
+            JvmInfo.jvmInfo().getClassPath();
+            JvmInfo.jvmInfo().getInputArguments();
+            JvmInfo.jvmInfo().getMem();
+            JvmInfo.jvmInfo().getPid();
+            JvmInfo.jvmInfo().getStartTime();
+            JvmInfo.jvmInfo().getSystemProperties();
+            JvmInfo.jvmInfo().getVersion();
+            JvmInfo.jvmInfo().getVmName();
+            JvmInfo.jvmInfo().getVmVendor();
+            JvmInfo.jvmInfo().getVmVersion();
+            BytesStreamOutput so = new BytesStreamOutput();
+            JvmInfo.jvmInfo().writeTo(so);
+            JvmInfo j = JvmInfo.readJvmInfo(new InputStreamStreamInput(new ByteArrayInputStream(so.bytes().toBytes())));
+            System.out.println(j.getClassPath());
+            
+            
+           System.out.println(JvmInfo.jvmInfo().toXContent(JsonXContent.contentBuilder(), ToXContent.EMPTY_PARAMS).string());
+            
+            
+        }
+        
+        
+        
+        
+        
 }
