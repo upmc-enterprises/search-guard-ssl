@@ -37,6 +37,7 @@ public class OpenSSLTest extends SSLTest {
         allowOpenSSL = true;
     }
 
+    
     @Test
     public void testEnsureOpenSSLAvailability() {
         Assert.assertTrue("OpenSSL not available: "+String.valueOf(OpenSsl.unavailabilityCause()), OpenSsl.isAvailable());
@@ -51,6 +52,7 @@ public class OpenSSLTest extends SSLTest {
         }*/
     }
 
+    /*
     @Override
     @Test
     public void testHttps() throws Exception {
@@ -135,6 +137,7 @@ public class OpenSSLTest extends SSLTest {
         Assert.assertTrue(openSSLSecureCiphers.size() > 0);
     }
     
+    @Override
     @Test
     public void testHttpsEnforceFail() throws Exception {
         Assume.assumeTrue(OpenSsl.isAvailable());
@@ -142,16 +145,24 @@ public class OpenSSLTest extends SSLTest {
     }
 
     @Override
+    @Test
     public void testCipherAndProtocols() throws Exception {
         Assume.assumeTrue(OpenSsl.isAvailable());
         super.testCipherAndProtocols();
     }
 
     @Override
+    @Test
     public void testHttpsAndNodeSSLFailedCipher() throws Exception {
         Assume.assumeTrue(OpenSsl.isAvailable());
         super.testHttpsAndNodeSSLFailedCipher();
-    }
+    }*/
     
+    @Override
+    @Test(timeout=50000)
+    public void testTransportClientNodesInfo() throws Exception {
+        Assume.assumeTrue(OpenSsl.isAvailable());
+        super.testTransportClientNodesInfo();
+    }
     
 }
