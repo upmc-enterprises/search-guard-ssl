@@ -80,8 +80,8 @@ public abstract class AbstractUnitTest {
     protected final String clustername = "searchguard_ssl_testcluster";
 
     private Node esNode1;
-    private Node esNode2;
-    private Node esNode3;
+    //private Node esNode2;
+    //private Node esNode3;
     private String httpHost = null;
     private int httpPort = -1;
     protected String nodeHost;
@@ -156,16 +156,16 @@ public abstract class AbstractUnitTest {
 
         FileUtils.deleteDirectory(new File("data"));
 
-        esNode1 = new PluginAwareNode(getDefaultSettingsBuilder(1, false, true).put(
+        esNode1 = new PluginAwareNode(getDefaultSettingsBuilder(1, true, true).put(
                 settings == null ? Settings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
-        esNode2 = new PluginAwareNode(getDefaultSettingsBuilder(2, true, true).put(
-                settings == null ? Settings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
-        esNode3 = new PluginAwareNode(getDefaultSettingsBuilder(3, true, false).put(
-                settings == null ? Settings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
+        //esNode2 = new PluginAwareNode(getDefaultSettingsBuilder(2, true, true).put(
+        //        settings == null ? Settings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
+        //esNode3 = new PluginAwareNode(getDefaultSettingsBuilder(3, true, false).put(
+        //        settings == null ? Settings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
 
         esNode1.start();
-        esNode2.start();
-        esNode3.start();
+        //esNode2.start();
+        //esNode3.start();
 
         waitForGreenClusterState(esNode1.client());
     }
@@ -179,14 +179,14 @@ public abstract class AbstractUnitTest {
     @After
     public void tearDown() throws Exception {
 
-        if (esNode3 != null) {
+       /* if (esNode3 != null) {
             esNode3.close();
         }
 
         if (esNode2 != null) {
             esNode2.close();
         }
-
+*/
         if (esNode1 != null) {
             esNode1.close();
         }
@@ -200,7 +200,7 @@ public abstract class AbstractUnitTest {
         try {
             log.debug("waiting for cluster state {}", status.name());
             final ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForStatus(status)
-                    .setTimeout(timeout).setWaitForNodes("3").execute().actionGet();
+                    .setTimeout(timeout).setWaitForNodes("1").execute().actionGet();
             if (healthResponse.isTimedOut()) {
                 throw new IOException("cluster state is " + healthResponse.getStatus().name() + " with "
                         + healthResponse.getNumberOfNodes() + " nodes");

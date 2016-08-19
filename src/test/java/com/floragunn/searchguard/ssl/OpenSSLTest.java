@@ -210,7 +210,7 @@ public class OpenSSLTest extends SSLTest {
             
             log.debug("TransportClient connected");
             Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
-            Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+            Assert.assertEquals(1, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
             log.debug("ClusterHealth done");            
             
             try {
@@ -303,11 +303,11 @@ public class OpenSSLTest extends SSLTest {
             
             log.debug("TransportClient connected");
             Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
-            Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+            Assert.assertEquals(1, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
             log.debug("ClusterHealth done");            
-            Assert.assertEquals(3, tc.admin().cluster().nodesHotThreads(new NodesHotThreadsRequest()).actionGet(10000).getNodes().length);            
+            Assert.assertEquals(1, tc.admin().cluster().nodesHotThreads(new NodesHotThreadsRequest()).actionGet(10000).getNodes().length);            
             log.debug("NodesHotThreadsRequest asserted");
-            Assert.assertEquals(3, tc.admin().cluster().nodesStats(new NodesStatsRequest()).actionGet(10000).getNodes().length);            
+            Assert.assertEquals(1, tc.admin().cluster().nodesStats(new NodesStatsRequest()).actionGet(10000).getNodes().length);            
             log.debug("NodesStatsRequest asserted");
             Assert.assertNotNull(tc.admin().cluster().clusterStats(new ClusterStatsRequest()).actionGet(10000));            
             log.debug("ClusterStatsRequest asserted");
@@ -344,9 +344,9 @@ public class OpenSSLTest extends SSLTest {
             
             log.debug("TransportClient connected");
             Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
-            Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+            Assert.assertEquals(1, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
             log.debug("ClusterHealth done");            
-             Assert.assertEquals(3, tc.admin().cluster().nodesStats(new NodesStatsRequest()).actionGet(10000).getNodes().length);            
+             Assert.assertEquals(1, tc.admin().cluster().nodesStats(new NodesStatsRequest()).actionGet(10000).getNodes().length);            
             log.debug("NodesStatsRequest asserted");
             Assert.assertNotNull(tc.admin().cluster().clusterStats(new ClusterStatsRequest()).actionGet(10000));            
             log.debug("ClusterStatsRequest asserted");
@@ -383,7 +383,7 @@ public class OpenSSLTest extends SSLTest {
                 
                 log.debug("TransportClient connected");
                 Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
-                Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+                Assert.assertEquals(1, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
                 log.debug("ClusterHealth done");            
                           Assert.assertNotNull(tc.admin().cluster().clusterStats(new ClusterStatsRequest()).actionGet(10000));            
                 log.debug("ClusterStatsRequest asserted");
@@ -422,7 +422,7 @@ public class OpenSSLTest extends SSLTest {
                 
                 log.debug("TransportClient connected");
                 Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
-                Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+                Assert.assertEquals(1, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
                 log.debug("ClusterHealth done");            
                           Assert.assertNotNull(tc.admin().cluster().clusterStats(new ClusterStatsRequest()).actionGet(10000));            
                   log.debug("PendingClusterTasksRequest asserted");
@@ -457,7 +457,7 @@ public class OpenSSLTest extends SSLTest {
                 
                 log.debug("TransportClient connected");
                 Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
-                Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+                Assert.assertEquals(1, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
                 log.debug("ClusterHealth done");            
                                   Assert.assertNotNull(tc.admin().cluster().state(new ClusterStateRequest()).actionGet(10000).getState());   
                 log.debug("ClusterStateRequest asserted");
