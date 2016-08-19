@@ -19,10 +19,21 @@ package com.floragunn.searchguard.ssl;
 
 import io.netty.handler.ssl.OpenSsl;
 
+import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.elasticsearch.action.admin.cluster.node.hotthreads.NodesHotThreadsRequest;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.action.admin.cluster.node.stats.NodesStatsRequest;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequest;
+import org.elasticsearch.action.admin.cluster.tasks.PendingClusterTasksRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -164,5 +175,284 @@ public class OpenSSLTest extends SSLTest {
         Assume.assumeTrue(OpenSsl.isAvailable());
         super.testTransportClientNodesInfo();
     }
+    @Test(timeout=50000)
+    public void test0() throws Exception {
+
+        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
+                .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
+                .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
+                .put("searchguard.ssl.transport.enforce_hostname_verification", false)
+                .put("searchguard.ssl.transport.resolve_hostname", false).build();
+
+        startES(settings);
+        
+        log.debug("Elasticsearch started");
+
+        final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("path.home", ".").put(settings).build();
+
+        try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+            
+            log.debug("TransportClient built, connect now to {}:{}", nodeHost, nodePort);
+            
+            tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
+            
+            log.debug("TransportClient connected");
+            Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
+            Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+            log.debug("ClusterHealth done");            
+            
+            try {
+                tc.admin().cluster().nodesInfo(new NodesInfoRequest().clear()).actionGet(10000).getNodes();
+            } catch (Exception e) {
+                System.out.println("fail none::"+e);
+            }   
+            
+            try {
+                tc.admin().cluster().nodesInfo(new NodesInfoRequest().clear().settings(true)).actionGet(10000).getNodes();
+            } catch (Exception e) {
+                System.out.println("fail se::"+e);
+            }  
+            
+            try {
+                tc.admin().cluster().nodesInfo(new NodesInfoRequest().clear().http(true)).actionGet(10000).getNodes();
+            } catch (Exception e) {
+                System.out.println("fail ht::"+e);
+            }  
+            
+            try {
+                tc.admin().cluster().nodesInfo(new NodesInfoRequest().clear().plugins(true)).actionGet(10000).getNodes();
+            } catch (Exception e) {
+                System.out.println("fail pl::"+e);
+            }  
+            
+            try {
+                tc.admin().cluster().nodesInfo(new NodesInfoRequest().clear().jvm(true)).actionGet(10000).getNodes();
+            } catch (Exception e) {
+                System.out.println("fail jvm::"+e);
+            }  
+            
+            
+            try {
+                tc.admin().cluster().nodesInfo(new NodesInfoRequest().clear().os(true)).actionGet(10000).getNodes();
+            } catch (Exception e) {
+                System.out.println("fail os::"+e);
+            }  
+            
+            
+            try {
+                tc.admin().cluster().nodesInfo(new NodesInfoRequest().clear().process(true)).actionGet(10000).getNodes();
+            } catch (Exception e) {
+                System.out.println("fail pro::"+e);
+            } 
+            
+            
+            try {
+                tc.admin().cluster().nodesInfo(new NodesInfoRequest().clear().threadPool(true)).actionGet(10000).getNodes();
+            } catch (Exception e) {
+                System.out.println("fail tp::"+e);
+            } 
+            
+            
+            try {
+                tc.admin().cluster().nodesInfo(new NodesInfoRequest().clear().transport(true)).actionGet(10000).getNodes();
+            } catch (Exception e) {
+                System.out.println("fail tr::"+e);
+            } 
+            
+            
+            
+
+        }
+    }
+    
+    @Test(timeout=50000)
+    public void test1() throws Exception {
+
+        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
+                .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
+                .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
+                .put("searchguard.ssl.transport.enforce_hostname_verification", false)
+                .put("searchguard.ssl.transport.resolve_hostname", false).build();
+
+        startES(settings);
+        
+        log.debug("Elasticsearch started");
+
+        final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("path.home", ".").put(settings).build();
+
+        try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+            
+            log.debug("TransportClient built, connect now to {}:{}", nodeHost, nodePort);
+            
+            tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
+            
+            log.debug("TransportClient connected");
+            Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
+            Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+            log.debug("ClusterHealth done");            
+            Assert.assertEquals(3, tc.admin().cluster().nodesHotThreads(new NodesHotThreadsRequest()).actionGet(10000).getNodes().length);            
+            log.debug("NodesHotThreadsRequest asserted");
+            Assert.assertEquals(3, tc.admin().cluster().nodesStats(new NodesStatsRequest()).actionGet(10000).getNodes().length);            
+            log.debug("NodesStatsRequest asserted");
+            Assert.assertNotNull(tc.admin().cluster().clusterStats(new ClusterStatsRequest()).actionGet(10000));            
+            log.debug("ClusterStatsRequest asserted");
+            Assert.assertNotNull(tc.admin().cluster().pendingClusterTasks(new PendingClusterTasksRequest()).actionGet(10000));  
+            log.debug("PendingClusterTasksRequest asserted");
+            Assert.assertNotNull(tc.admin().cluster().state(new ClusterStateRequest()).actionGet(10000).getState());   
+            log.debug("ClusterStateRequest asserted");
+        }
+    }
+    
+    @Test(timeout=50000)
+    public void test2() throws Exception {
+
+        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
+                .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
+                .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
+                .put("searchguard.ssl.transport.enforce_hostname_verification", false)
+                .put("searchguard.ssl.transport.resolve_hostname", false).build();
+
+        startES(settings);
+        
+        log.debug("Elasticsearch started");
+
+        final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("path.home", ".").put(settings).build();
+
+        try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+            
+            log.debug("TransportClient built, connect now to {}:{}", nodeHost, nodePort);
+            
+            tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
+            
+            log.debug("TransportClient connected");
+            Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
+            Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+            log.debug("ClusterHealth done");            
+             Assert.assertEquals(3, tc.admin().cluster().nodesStats(new NodesStatsRequest()).actionGet(10000).getNodes().length);            
+            log.debug("NodesStatsRequest asserted");
+            Assert.assertNotNull(tc.admin().cluster().clusterStats(new ClusterStatsRequest()).actionGet(10000));            
+            log.debug("ClusterStatsRequest asserted");
+            Assert.assertNotNull(tc.admin().cluster().pendingClusterTasks(new PendingClusterTasksRequest()).actionGet(10000));  
+            log.debug("PendingClusterTasksRequest asserted");
+            Assert.assertNotNull(tc.admin().cluster().state(new ClusterStateRequest()).actionGet(10000).getState());   
+            log.debug("ClusterStateRequest asserted");
+        }
+    }
+        
+        @Test(timeout=50000)
+        public void test3() throws Exception {
+
+            final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+                    .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                    .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                    .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
+                    .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
+                    .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
+                    .put("searchguard.ssl.transport.enforce_hostname_verification", false)
+                    .put("searchguard.ssl.transport.resolve_hostname", false).build();
+
+            startES(settings);
+            
+            log.debug("Elasticsearch started");
+
+            final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("path.home", ".").put(settings).build();
+
+            try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+                
+                log.debug("TransportClient built, connect now to {}:{}", nodeHost, nodePort);
+                
+                tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
+                
+                log.debug("TransportClient connected");
+                Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
+                Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+                log.debug("ClusterHealth done");            
+                          Assert.assertNotNull(tc.admin().cluster().clusterStats(new ClusterStatsRequest()).actionGet(10000));            
+                log.debug("ClusterStatsRequest asserted");
+                Assert.assertNotNull(tc.admin().cluster().pendingClusterTasks(new PendingClusterTasksRequest()).actionGet(10000));  
+                log.debug("PendingClusterTasksRequest asserted");
+                Assert.assertNotNull(tc.admin().cluster().state(new ClusterStateRequest()).actionGet(10000).getState());   
+                log.debug("ClusterStateRequest asserted");
+            }
+        }
+    
+    
+        
+        @Test(timeout=50000)
+        public void test4() throws Exception {
+
+            final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+                    .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                    .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                    .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
+                    .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
+                    .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
+                    .put("searchguard.ssl.transport.enforce_hostname_verification", false)
+                    .put("searchguard.ssl.transport.resolve_hostname", false).build();
+
+            startES(settings);
+            
+            log.debug("Elasticsearch started");
+
+            final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("path.home", ".").put(settings).build();
+
+            try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+                
+                log.debug("TransportClient built, connect now to {}:{}", nodeHost, nodePort);
+                
+                tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
+                
+                log.debug("TransportClient connected");
+                Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
+                Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+                log.debug("ClusterHealth done");            
+                          Assert.assertNotNull(tc.admin().cluster().clusterStats(new ClusterStatsRequest()).actionGet(10000));            
+                  log.debug("PendingClusterTasksRequest asserted");
+                Assert.assertNotNull(tc.admin().cluster().state(new ClusterStateRequest()).actionGet(10000).getState());   
+                log.debug("ClusterStateRequest asserted");
+            }
+        }
+    
+        @Test(timeout=50000)
+        public void test5() throws Exception {
+
+            final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+                    .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                    .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                    .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
+                    .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
+                    .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
+                    .put("searchguard.ssl.transport.enforce_hostname_verification", false)
+                    .put("searchguard.ssl.transport.resolve_hostname", false).build();
+
+            startES(settings);
+            
+            log.debug("Elasticsearch started");
+
+            final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("path.home", ".").put(settings).build();
+
+            try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+                
+                log.debug("TransportClient built, connect now to {}:{}", nodeHost, nodePort);
+                
+                tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
+                
+                log.debug("TransportClient connected");
+                Assert.assertEquals("test", tc.index(new IndexRequest("test","test").refresh(true).source("{\"a\":5}")).actionGet().getIndex());           
+                Assert.assertEquals(3, tc.admin().cluster().health(new ClusterHealthRequest("test")).actionGet().getNumberOfNodes());
+                log.debug("ClusterHealth done");            
+                                  Assert.assertNotNull(tc.admin().cluster().state(new ClusterStateRequest()).actionGet(10000).getState());   
+                log.debug("ClusterStateRequest asserted");
+            }
+        }
     
 }
