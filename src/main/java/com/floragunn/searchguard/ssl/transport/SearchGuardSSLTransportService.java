@@ -31,9 +31,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.DelegatingTransportChannel;
 import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportChannel;
 import org.elasticsearch.transport.TransportRequest;
@@ -64,7 +62,7 @@ public class SearchGuardSSLTransportService extends TransportService {
         super.registerRequestHandler(action, request, executor, forceExecution, new Interceptor<Request>(handler, action));
     }
 
-    private class Interceptor<Request extends TransportRequest> extends TransportRequestHandler<Request> {
+    private class Interceptor<Request extends TransportRequest> implements TransportRequestHandler<Request> {
 
         private final ESLogger log = Loggers.getLogger(this.getClass());
         private final TransportRequestHandler<Request> handler;
@@ -77,31 +75,18 @@ public class SearchGuardSSLTransportService extends TransportService {
         }
         
         @Override
-        public void messageReceived(Request request, TransportChannel channel) throws Exception {
-            messageReceived(request, channel, null);
-        }
-
-        @Override
-        public void messageReceived(final Request request, final TransportChannel transportChannel, Task task) throws Exception {
+        public void messageReceived(final Request request, final TransportChannel transportChannel) throws Exception {
         
             HeaderHelper.checkSGHeader(request);
             
             NettyTransportChannel nettyChannel = null;            
             
-            if(transportChannel instanceof DelegatingTransportChannel) {
-                TransportChannel delegatingTransportChannel = ((DelegatingTransportChannel) transportChannel).getChannel();
-                
-                if (delegatingTransportChannel instanceof NettyTransportChannel) {
-                    nettyChannel =  (NettyTransportChannel) delegatingTransportChannel;
-                } 
-            } else {
-                if (transportChannel instanceof NettyTransportChannel) {
-                    nettyChannel =  (NettyTransportChannel) transportChannel;
-                } 
-            }
-            
+            if (transportChannel instanceof NettyTransportChannel) {
+                nettyChannel =  (NettyTransportChannel) transportChannel;
+            } 
+
             if (nettyChannel == null) {
-                messageReceivedDecorate(request, handler, transportChannel, task);
+                messageReceivedDecorate(request, handler, transportChannel);
                 return;
             }
             
@@ -129,7 +114,7 @@ public class SearchGuardSSLTransportService extends TransportService {
                     request.putInContext("_sg_ssl_transport_peer_certificates", x509Certs);
                     request.putInContext("_sg_ssl_transport_protocol", sslhandler.getEngine().getSession().getProtocol());
                     request.putInContext("_sg_ssl_transport_cipher", sslhandler.getEngine().getSession().getCipherSuite());
-                    messageReceivedDecorate(request, handler, transportChannel, task);
+                    messageReceivedDecorate(request, handler, transportChannel);
                 } else {
                     final String msg = "No X509 transport client certificates found (SG 12)";
                     log.error(msg);
@@ -161,8 +146,8 @@ public class SearchGuardSSLTransportService extends TransportService {
         // no-op
     }
     
-    protected void messageReceivedDecorate(final TransportRequest request, final TransportRequestHandler handler, final TransportChannel transportChannel, Task task) throws Exception {
-        handler.messageReceived(request, transportChannel, task);
+    protected void messageReceivedDecorate(final TransportRequest request, final TransportRequestHandler handler, final TransportChannel transportChannel) throws Exception {
+        handler.messageReceived(request, transportChannel);
     }
     
     protected void errorThrown(Throwable t, final TransportRequest request, String action) {
