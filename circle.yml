@@ -2,7 +2,6 @@ general:
   branches:
     only:
       - do_not_build
-      
 dependencies:
   pre:
     - sudo apt-get update; sudo apt-get install openssl libapr1
