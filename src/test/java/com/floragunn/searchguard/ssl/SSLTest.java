@@ -430,7 +430,7 @@ public class SSLTest extends AbstractUnitTest {
         final Settings tcSettings = Settings.builder()
                 .put("cluster.name", clustername)
                 .put("path.home", ".")
-                .put("searchguard.ssl.client.enable_external_context", true)
+                .put("searchguard.ssl.client.external_context_id", "abcx")
                 .build();
 
         final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
@@ -448,7 +448,7 @@ public class SSLTest extends AbstractUnitTest {
         
         SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        ExternalSearchGuardKeyStore.setSslContext(sslContext);
+        ExternalSearchGuardKeyStore.registerExternalSslContext("abcx", sslContext);
         
         try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
             

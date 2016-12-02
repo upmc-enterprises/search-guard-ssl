@@ -20,15 +20,13 @@ package com.floragunn.searchguard.ssl;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.settings.Settings;
 
-import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
-
 public final class SearchGuardSSLModule extends AbstractModule {
 
     private final SearchGuardKeyStore sgks;
 
     public SearchGuardSSLModule(final Settings settings) {
         super();
-        if(settings.getAsBoolean(SSLConfigConstants.SEARCHGUARD_SSL_CLIENT_ENABLE_EXTERNAL_CONTEXT, false)) {
+        if(ExternalSearchGuardKeyStore.hasExternalSslContext(settings)) {
             this.sgks = new ExternalSearchGuardKeyStore(settings);
         } else {
             this.sgks = new DefaultSearchGuardKeyStore(settings);

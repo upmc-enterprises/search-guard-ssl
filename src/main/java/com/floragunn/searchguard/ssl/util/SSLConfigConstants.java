@@ -54,7 +54,7 @@ public final class SSLConfigConstants {
     public static final String SEARCHGUARD_SSL_TRANSPORT_ENABLED_PROTOCOLS = "searchguard.ssl.transport.enabled_protocols";
     public static final String SEARCHGUARD_SSL_HTTP_ENABLED_CIPHERS = "searchguard.ssl.http.enabled_ciphers";
     public static final String SEARCHGUARD_SSL_HTTP_ENABLED_PROTOCOLS = "searchguard.ssl.http.enabled_protocols";
-    public static final String SEARCHGUARD_SSL_CLIENT_ENABLE_EXTERNAL_CONTEXT = "searchguard.ssl.client.enable_external_context";
+    public static final String SEARCHGUARD_SSL_CLIENT_EXTERNAL_CONTEXT_ID = "searchguard.ssl.client.external_context_id";
     
     
     private static final String[] _SECURE_SSL_PROTOCOLS = {"TLSv1.2", "TLSv1.1"};
