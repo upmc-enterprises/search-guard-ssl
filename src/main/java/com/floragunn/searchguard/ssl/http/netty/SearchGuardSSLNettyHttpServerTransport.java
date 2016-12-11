@@ -35,10 +35,10 @@ import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.http.HttpChannel;
-import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.http.netty.NettyHttpRequest;
 import org.elasticsearch.http.netty.NettyHttpServerTransport;
+import org.elasticsearch.rest.RestChannel;
+import org.elasticsearch.rest.RestRequest;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -47,17 +47,20 @@ import org.jboss.netty.handler.ssl.NotSslRecordException;
 import org.jboss.netty.handler.ssl.SslHandler;
 
 import com.floragunn.searchguard.ssl.SearchGuardKeyStore;
+import com.floragunn.searchguard.ssl.transport.PrincipalExtractor;
 import com.floragunn.searchguard.ssl.util.HeaderHelper;
 
 public class SearchGuardSSLNettyHttpServerTransport extends NettyHttpServerTransport {
 
     private final SearchGuardKeyStore sgks;
+    private final PrincipalExtractor principalExtractor;
 
     @Inject
     public SearchGuardSSLNettyHttpServerTransport(final Settings settings, final NetworkService networkService, final BigArrays bigArrays,
-            final SearchGuardKeyStore sgks) {
+            final SearchGuardKeyStore sgks, PrincipalExtractor principalExtractor) {
         super(settings, networkService, bigArrays);
         this.sgks = sgks;
+        this.principalExtractor = principalExtractor;
     }
 
     @Override
@@ -112,7 +115,7 @@ public class SearchGuardSSLNettyHttpServerTransport extends NettyHttpServerTrans
     }
 
     @Override
-    protected void dispatchRequest(final HttpRequest request, final HttpChannel channel) {
+    protected void dispatchRequest(final RestRequest request, final RestChannel channel) {
 
         HeaderHelper.checkSGHeader(request);
         
@@ -127,8 +130,8 @@ public class SearchGuardSSLNettyHttpServerTransport extends NettyHttpServerTrans
 
                 if (certs != null && certs.length > 0 && certs[0] instanceof X509Certificate) {
                     X509Certificate[] x509Certs = Arrays.copyOf(certs, certs.length, X509Certificate[].class);
-                    X500Principal principal =  x509Certs[0].getSubjectX500Principal();
-                    request.putInContext("_sg_ssl_principal", principal == null ? null : principal.getName());
+                    final String principal = principalExtractor.extractPrincipal(x509Certs[0], PrincipalExtractor.Type.HTTP);
+                    request.putInContext("_sg_ssl_principal", principal);
                     request.putInContext("_sg_ssl_peer_certificates", x509Certs);
                 } else if(engine.getNeedClientAuth()) {
                     ElasticsearchException ex = new ElasticsearchException("No client certificates found but such are needed (SG 9).");
