@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.auth.x500.X500Principal;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
@@ -62,15 +61,9 @@ public class SearchGuardSSLTransportService extends TransportService {
     }
 
     @Override
-    public <Request extends TransportRequest> void registerRequestHandler(String action, Callable<Request> requestFactory, String executor,
-            boolean forceExecution, boolean canTripCircuitBreaker, TransportRequestHandler<Request> handler) {
-        super.registerRequestHandler(action, requestFactory, executor, forceExecution, canTripCircuitBreaker, new Interceptor<Request>(handler, action));
-    }
-
-    @Override
     public <Request extends TransportRequest> void registerRequestHandler(String action, Class<Request> request, String executor,
-            boolean forceExecution, boolean canTripCircuitBreaker, TransportRequestHandler<Request> handler) {
-        super.registerRequestHandler(action, request, executor, forceExecution, canTripCircuitBreaker, new Interceptor<Request>(handler, action));
+            boolean forceExecution, TransportRequestHandler<Request> handler) {
+        super.registerRequestHandler(action, request, executor, forceExecution, new Interceptor<Request>(handler, action));
     }
 
     private class Interceptor<Request extends TransportRequest> extends TransportRequestHandler<Request> {

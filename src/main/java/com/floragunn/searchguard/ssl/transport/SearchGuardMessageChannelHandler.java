@@ -57,9 +57,9 @@ public class SearchGuardMessageChannelHandler extends MessageChannelHandler {
     }
 
     @Override
-    protected String handleRequest(Channel channel, Marker marker, StreamInput buffer, long requestId, int messageLengthBytes,
-            Version version) throws IOException {
-        return super.handleRequest(channel, marker, buffer, requestId, messageLengthBytes, version);
+    protected String handleRequest(final Channel channel, final StreamInput buffer, final long requestId, final Version version)
+            throws IOException {
+        return super.handleRequest(channel, buffer, requestId, version);
     }
 
     @Override
