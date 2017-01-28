@@ -134,11 +134,11 @@ public class SearchGuardSSLTransportService extends TransportService {
                         && peerCerts[0] instanceof X509Certificate 
                         && localCerts != null && localCerts.length > 0 
                         && localCerts[0] instanceof X509Certificate) {
-                    X509Certificate[] x509PeerCerts = Arrays.copyOf(peerCerts, peerCerts.length, X509Certificate[].class);
-                    X509Certificate[] x509LocalCerts = Arrays.copyOf(localCerts, localCerts.length, X509Certificate[].class);
-                    addAdditionalContextValues(action, request, x509LocalCerts, x509PeerCerts);
-                    addAdditionalContextValues(action, request, x509PeerCerts);
+                    final X509Certificate[] x509PeerCerts = Arrays.copyOf(peerCerts, peerCerts.length, X509Certificate[].class);
+                    final X509Certificate[] x509LocalCerts = Arrays.copyOf(localCerts, localCerts.length, X509Certificate[].class);
                     final String principal = principalExtractor.extractPrincipal(x509PeerCerts[0], PrincipalExtractor.Type.TRANSPORT);
+                    addAdditionalContextValues(action, request, x509LocalCerts, x509PeerCerts, principal);
+                    addAdditionalContextValues(action, request, x509PeerCerts);
                     request.putInContext("_sg_ssl_transport_principal", principal);
                     request.putInContext("_sg_ssl_transport_peer_certificates", x509PeerCerts);
                     request.putInContext("_sg_ssl_transport_local_certificates", x509LocalCerts);
@@ -171,14 +171,14 @@ public class SearchGuardSSLTransportService extends TransportService {
 
     }
 
-    protected void addAdditionalContextValues(final String action, final TransportRequest request, final X509Certificate[] localCerts, final X509Certificate[] peerCerts)
+    protected void addAdditionalContextValues(final String action, final TransportRequest request, final X509Certificate[] localCerts, final X509Certificate[] peerCerts, final String principal)
             throws Exception {
         // no-op
     }
     
     /**
      * @deprecated
-     * use addAdditionalContextValues(final String action, final TransportRequest request, final X509Certificate[] localCerts, final X509Certificate[] peerCerts) instead
+     * use addAdditionalContextValues(final String action, final TransportRequest request, final X509Certificate[] localCerts, final X509Certificate[] peerCerts, final String principal) instead
      */
     @Deprecated
     protected void addAdditionalContextValues(final String action, final TransportRequest request, final X509Certificate[] peerCerts)
