@@ -74,5 +74,13 @@ cat ca/chain-ca.pem $NODE_NAME-signed.pem | keytool \
     
 keytool -importkeystore -srckeystore $NODE_NAME-keystore.jks -srcstorepass $KS_PASS -srcstoretype JKS -deststoretype PKCS12 -deststorepass $KS_PASS -destkeystore $NODE_NAME-keystore.p12
 
+openssl pkcs12 -in "$NODE_NAME-keystore.p12" -out "$NODE_NAME.key.pem" -nocerts -nodes -passin pass:$KS_PASS
+openssl pkcs12 -in "$NODE_NAME-keystore.p12" -out "$NODE_NAME.key.enc.pem" -nocerts -passout pass:$KS_PASS -passin pass:$KS_PASS
+openssl pkcs12 -in "$NODE_NAME-keystore.p12" -out "$NODE_NAME.crt.pem" -nokeys -passin pass:$KS_PASS
+
+openssl x509 -noout -modulus -in "$NODE_NAME.crt.pem" | openssl md5
+openssl rsa -noout -modulus -in "$NODE_NAME.key.pem" | openssl md5
+openssl req -noout -modulus -in "$NODE_NAME.csr" | openssl md5
+
 echo All done for $NODE_NAME
 	

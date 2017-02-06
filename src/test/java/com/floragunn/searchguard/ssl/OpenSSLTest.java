@@ -153,5 +153,9 @@ public class OpenSSLTest extends SSLTest {
         super.testHttpsAndNodeSSLFailedCipher();
     }
     
-    
+    @Test
+    public void testHttpsAndNodeSSLPem() throws Exception {
+        Assume.assumeTrue(OpenSsl.isAvailable());
+        super.testHttpsAndNodeSSLPem();
+    }
 }
