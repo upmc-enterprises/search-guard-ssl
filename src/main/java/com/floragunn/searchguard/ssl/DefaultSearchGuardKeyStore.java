@@ -359,24 +359,26 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
                 
             } else if (rawPemCertFilePath != null) {
                 
+                final String trustedCas = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH, null);
+                
                 if (httpClientAuthMode == ClientAuth.REQUIRE) {
                     
-                    if(settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH, null) == null) {
+                    if(trustedCas == null) {
                         throw new ElasticsearchException(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH
                                 + " must be set if http ssl and client auth is reqested.");
                     }
                     
+                    checkStorePath(trustedCas);
+                    
                 }
                 
                 final String pemKey = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMKEY_FILEPATH);
-                final String trustedCas = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH, null);
-                
+
                 checkStorePath(rawPemCertFilePath);
                 checkStorePath(pemKey);
-                checkStorePath(trustedCas);
                 
                 try {
-                    httpSslContext = buildSSLServerContext(new File(pemKey), new File(rawPemCertFilePath), new File(trustedCas), settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMKEY_PASSWORD), getEnabledSSLCiphers(this.sslHTTPProvider, true), sslHTTPProvider, httpClientAuthMode);
+                    httpSslContext = buildSSLServerContext(new File(pemKey), new File(rawPemCertFilePath), trustedCas == null?null:new File(trustedCas), settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMKEY_PASSWORD), getEnabledSSLCiphers(this.sslHTTPProvider, true), sslHTTPProvider, httpClientAuthMode);
                 } catch (final Exception e) {
                     throw new ElasticsearchSecurityException("Error while initializing http SSL layer from PEM: "+e.toString(), e);
                 }
