@@ -201,7 +201,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
                     final KeyStore ks = KeyStore.getInstance(keystoreType);
                     ks.load(new FileInputStream(new File(keystoreFilePath)), (keystorePassword == null || keystorePassword.length() == 0) ? null:keystorePassword.toCharArray());
     
-                    final X509Certificate[] transportKeystoreCert = SSLCertificateHelper.exportCertificateChain(ks, keystoreAlias);
+                    final X509Certificate[] transportKeystoreCert = SSLCertificateHelper.exportServerCertChain(ks, keystoreAlias);
                     final PrivateKey transportKeystoreKey = SSLCertificateHelper.exportDecryptedKey(ks, keystoreAlias, (keystorePassword==null || keystorePassword.length() == 0) ? null:keystorePassword.toCharArray());
     
                     if(transportKeystoreKey == null) {
@@ -226,7 +226,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
                     final KeyStore ts = KeyStore.getInstance(truststoreType);
                     ts.load(new FileInputStream(new File(truststoreFilePath)), (truststorePassword==null || truststorePassword.length() == 0) ? null:truststorePassword.toCharArray());
     
-                    final X509Certificate[] trustedTransportCertificates = SSLCertificateHelper.exportCertificateChain(ts, truststoreAlias);
+                    final X509Certificate[] trustedTransportCertificates = SSLCertificateHelper.exportRootCertificates(ts, truststoreAlias);
     
                     if (trustedTransportCertificates == null) {
                         throw new ElasticsearchException("No truststore configured for server");
@@ -313,7 +313,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
                     final KeyStore ks = KeyStore.getInstance(keystoreType);
                     ks.load(new FileInputStream(new File(keystoreFilePath)), (keystorePassword == null || keystorePassword.length() == 0) ? null:keystorePassword.toCharArray());
 
-                    final X509Certificate[] httpKeystoreCert = SSLCertificateHelper.exportCertificateChain(ks, keystoreAlias);
+                    final X509Certificate[] httpKeystoreCert = SSLCertificateHelper.exportServerCertChain(ks, keystoreAlias);
                     final PrivateKey httpKeystoreKey = SSLCertificateHelper.exportDecryptedKey(ks, keystoreAlias, (keystorePassword==null || keystorePassword.length() == 0) ? null:keystorePassword.toCharArray());
 
                     if(httpKeystoreKey == null) {
@@ -348,7 +348,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
                         final KeyStore ts = KeyStore.getInstance(truststoreType);
                         ts.load(new FileInputStream(new File(truststoreFilePath)), (truststorePassword == null || truststorePassword.length() == 0) ?null:truststorePassword.toCharArray());
 
-                        trustedHTTPCertificates = SSLCertificateHelper.exportCertificateChain(ts, truststoreAlias);
+                        trustedHTTPCertificates = SSLCertificateHelper.exportRootCertificates(ts, truststoreAlias);
                     }
                     
                     httpSslContext = buildSSLServerContext(httpKeystoreKey, httpKeystoreCert, trustedHTTPCertificates, getEnabledSSLCiphers(this.sslHTTPProvider, true), sslHTTPProvider, httpClientAuthMode);

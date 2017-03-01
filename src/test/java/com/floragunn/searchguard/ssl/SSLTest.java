@@ -242,20 +242,19 @@ public class SSLTest extends AbstractUnitTest {
         final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMCERT_FILEPATH, getAbsoluteFilePathFromClassPath("pem/node-0.crt.pem"))
-                //.put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMKEY_FILEPATH, getAbsoluteFilePathFromClassPath("pem/node-0.key.enc.pem"))
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMKEY_FILEPATH, getAbsoluteFilePathFromClassPath("pem/node-0.key.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMCERT_FILEPATH, getAbsoluteFilePathFromClassPath("node-0.crt.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMKEY_FILEPATH, getAbsoluteFilePathFromClassPath("node-0.key.pem"))
                 //.put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMKEY_PASSWORD, "changeit")
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMTRUSTEDCAS_FILEPATH, getAbsoluteFilePathFromClassPath("pem/root-ca.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMTRUSTEDCAS_FILEPATH, getAbsoluteFilePathFromClassPath("root-ca.pem"))
                 .put("searchguard.ssl.transport.enforce_hostname_verification", false)
                 .put("searchguard.ssl.transport.resolve_hostname", false)
 
                 .put("searchguard.ssl.http.enabled", true)
                 .put("searchguard.ssl.http.clientauth_mode", "REQUIRE")
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMCERT_FILEPATH, getAbsoluteFilePathFromClassPath("pem/node-0.crt.pem"))
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMKEY_FILEPATH, getAbsoluteFilePathFromClassPath("pem/node-0.key.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMCERT_FILEPATH, getAbsoluteFilePathFromClassPath("node-0.crt.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMKEY_FILEPATH, getAbsoluteFilePathFromClassPath("node-0.key.pem"))
                 //.put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMKEY_PASSWORD, "changeit")
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH, getAbsoluteFilePathFromClassPath("pem/root-ca.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH, getAbsoluteFilePathFromClassPath("root-ca.pem"))
                 .build();
 
         startES(settings);
@@ -270,28 +269,26 @@ public class SSLTest extends AbstractUnitTest {
     @Test
     public void testHttpsAndNodeSSLPemEnc() throws Exception {
 
-        enableHTTPClientSSL = false;
-        trustHTTPServerCertificate = false;
-        sendHTTPClientCertificate = false;
-        
-        allowOpenSSL = true;
+        enableHTTPClientSSL = true;
+        trustHTTPServerCertificate = true;
+        sendHTTPClientCertificate = true;
 
         final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMCERT_FILEPATH, getAbsoluteFilePathFromClassPath("pem/nodex.crt.pem"))
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMKEY_FILEPATH, getAbsoluteFilePathFromClassPath("pem/nodex.key"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMCERT_FILEPATH, getAbsoluteFilePathFromClassPath("pem/node-4.crt.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMKEY_FILEPATH, getAbsoluteFilePathFromClassPath("pem/node-4.key"))
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMKEY_PASSWORD, "changeit")
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMTRUSTEDCAS_FILEPATH, getAbsoluteFilePathFromClassPath("pem/xroot-ca.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PEMTRUSTEDCAS_FILEPATH, getAbsoluteFilePathFromClassPath("root-ca.pem"))
                 .put("searchguard.ssl.transport.enforce_hostname_verification", false)
                 .put("searchguard.ssl.transport.resolve_hostname", false)
 
-                .put("searchguard.ssl.http.enabled", false)
-                //.put("searchguard.ssl.http.clientauth_mode", "REQUIRE")
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMCERT_FILEPATH, getAbsoluteFilePathFromClassPath("pem/nodex.crt.pem"))
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMKEY_FILEPATH, getAbsoluteFilePathFromClassPath("pem/nodex.key"))
+                .put("searchguard.ssl.http.enabled", true)
+                .put("searchguard.ssl.http.clientauth_mode", "REQUIRE")
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMCERT_FILEPATH, getAbsoluteFilePathFromClassPath("pem/node-4.crt.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMKEY_FILEPATH, getAbsoluteFilePathFromClassPath("pem/node-4.key"))
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMKEY_PASSWORD, "changeit")
-                //.put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH, getAbsoluteFilePathFromClassPath("pem/xroot-ca.pem"))
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH, getAbsoluteFilePathFromClassPath("root-ca.pem"))
                 .build();
 
         startES(settings);
