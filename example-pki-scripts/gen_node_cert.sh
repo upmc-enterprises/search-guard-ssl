@@ -39,8 +39,8 @@ echo Generating keystore and certificate for node $NODE_NAME
         -sigalg SHA256withRSA \
         -keypass $KS_PASS \
         -storepass $KS_PASS \
-        -dname "CN=$NODE_NAME.example.com, OU=SSL, O=Test, L=Test, C=DE" \
-        -ext san=dns:$NODE_NAME.example.com,dns:localhost,ip:127.0.0.1,oid:1.2.3.4.5.5 
+        -dname "CN=$NODE_NAME.elastic.svc.cluster.default, OU=UPMC Enterprises, O=UPMC, L=Pittsburgh, C=US" \
+        -ext san=dns:$NODE_NAME.elastic.svc.cluster.default,dns:elasticsearch,$NODE_NAME.default.svc.cluster.default,dns:localhost,ip:127.0.0.1,oid:1.2.3.4.5.5 
         
 #oid:1.2.3.4.5.5 denote this a server node certificate for search guard
 
@@ -53,8 +53,8 @@ echo Generating certificate signing request for node $NODE_NAME
         -keyalg     rsa \
         -keypass $KS_PASS \
         -storepass $KS_PASS \
-        -dname "CN=$NODE_NAME.example.com, OU=SSL, O=Test, L=Test, C=DE" \
-        -ext san=dns:$NODE_NAME.example.com,dns:localhost,ip:127.0.0.1,oid:1.2.3.4.5.5
+        -dname "CN=$NODE_NAME.elastic.svc.cluster.default, OU=UPMC Enterprises, O=UPMC, L=Pittsburgh, C=US" \
+        -ext san=dns:$NODE_NAME.elastic.svc.cluster.default,dns:elasticsearch,$NODE_NAME.default.svc.cluster.default,dns:localhost,ip:127.0.0.1,oid:1.2.3.4.5.5 
         
 #oid:1.2.3.4.5.5 denote this a server node certificate for search guard
 
